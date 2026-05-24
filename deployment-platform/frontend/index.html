@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One-Click Deployment Platform</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+    }
+
+    /* ── Layout ───────────────────────────────────────── */
+    header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header .badge {
+      background: #238636;
+      color: #fff;
+      font-size: .7rem;
+      padding: .15rem .5rem;
+      border-radius: 2rem;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 1.5rem;
+    }
+
+    /* ── Cards ────────────────────────────────────────── */
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    /* ── Form elements ────────────────────────────────── */
+    label {
+      display: block;
+      font-size: .8rem;
+      color: #8b949e;
+      margin-bottom: .3rem;
+      margin-top: 1rem;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="file"],
+    select {
+      width: 100%;
+      padding: .6rem .8rem;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-size: .875rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    input:focus, select:focus {
+      border-color: #58a6ff;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      font-size: .875rem;
+      font-weight: 600;
+      padding: .6rem 1.2rem;
+      transition: opacity .15s, transform .1s;
+    }
+
+    button:hover  { opacity: .85; }
+    button:active { transform: scale(.97); }
+
+    .btn-primary   { background: #238636; color: #fff; }
+    .btn-secondary { background: #21262d; color: #e6edf3; border: 1px solid #30363d; }
+    .btn-danger    { background: #da3633; color: #fff; }
+    .btn-block     { width: 100%; margin-top: 1.25rem; }
+
+    /* ── Tabs ─────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid #30363d;
+      padding-bottom: .5rem;
+    }
+
+    .tab {
+      background: none;
+      color: #8b949e;
+      padding: .4rem .9rem;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .tab.active {
+      background: #21262d;
+      color: #e6edf3;
+    }
+
+    /* ── Status colours ───────────────────────────────── */
+    .status-pill {
+      display: inline-block;
+      padding: .2rem .6rem;
+      border-radius: 2rem;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+
+    .status-reconciling { background: #b08800; color: #fff; }
+    .status-deployed    { background: #238636; color: #fff; }
+    .status-failed      { background: #da3633; color: #fff; }
+    .status-deleted     { background: #30363d; color: #8b949e; }
+    .status-pending     { background: #1f6feb; color: #fff; }
+
+    /* ── Pod list ─────────────────────────────────────── */
+    .pod-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .5rem 0;
+      border-bottom: 1px solid #21262d;
+      font-size: .8rem;
+    }
+
+    .pod-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .pod-dot.running  { background: #3fb950; }
+    .pod-dot.pending  { background: #d29922; }
+    .pod-dot.failed   { background: #f85149; }
+    .pod-dot.unknown  { background: #8b949e; }
+
+    /* ── Deployment list ──────────────────────────────── */
+    .dep-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 0;
+      border-bottom: 1px solid #21262d;
+      gap: .5rem;
+    }
+
+    .dep-row .name {
+      font-size: .875rem;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .dep-row .meta {
+      font-size: .75rem;
+      color: #8b949e;
+    }
+
+    /* ── Log / message area ───────────────────────────── */
+    .log {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 1rem;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: .775rem;
+      line-height: 1.6;
+      max-height: 220px;
+      overflow-y: auto;
+      color: #3fb950;
+      margin-top: 1rem;
+      white-space: pre-wrap;
+    }
+
+    /* ── Toast ────────────────────────────────────────── */
+    #toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      max-width: 380px;
+      box-shadow: 0 4px 24px #000a;
+      transform: translateY(120%);
+      transition: transform .3s;
+      z-index: 999;
+      font-size: .875rem;
+    }
+
+    #toast.show { transform: translateY(0); }
+    #toast.success { border-left: 4px solid #238636; }
+    #toast.error   { border-left: 4px solid #da3633; }
+
+    /* ── Empty state ──────────────────────────────────── */
+    .empty {
+      text-align: center;
+      padding: 2rem;
+      color: #8b949e;
+      font-size: .875rem;
+    }
+
+    /* ── Loader spinner ───────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #30363d;
+      border-top-color: #58a6ff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: .4rem;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Pipeline flow ────────────────────────────────── */
+    .pipeline {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      margin-top: 1rem;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      padding: .6rem .9rem;
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 6px;
+      font-size: .8rem;
+    }
+
+    .pipeline-step .icon { font-size: 1rem; }
+    .pipeline-step .step-label { flex: 1; }
+    .pipeline-step .step-status { font-size: .7rem; color: #8b949e; }
+    .pipeline-step.done   { border-color: #238636; }
+    .pipeline-step.active { border-color: #58a6ff; animation: pulse 1s infinite; }
+    .pipeline-step.error  { border-color: #da3633; }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(88,166,255,.3); }
+      50%       { box-shadow: 0 0 0 4px rgba(88,166,255,.1); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#58a6ff" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+  <h1>Deployment Platform</h1>
+  <span class="badge">EKS + FluxCD</span>
+</header>
+
+<main>
+
+  <!-- ─── LEFT PANEL ──────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+    <!-- Register card -->
+    <div class="card" id="register-card">
+      <h2>① Register User</h2>
+
+      <label>Username</label>
+      <input type="text" id="reg-username" placeholder="alice" />
+
+      <label>Email</label>
+      <input type="email" id="reg-email" placeholder="alice@example.com" />
+
+      <button class="btn-primary btn-block" onclick="registerUser()">
+        Create Account &amp; Namespace
+      </button>
+
+      <div id="reg-log" class="log" style="display:none"></div>
+    </div>
+
+    <!-- Deploy card -->
+    <div class="card" id="deploy-card">
+      <h2>② Deploy YAML</h2>
+
+      <label>User ID (from registration)</label>
+      <input type="text" id="deploy-userid" placeholder="uuid-from-registration" />
+
+      <label>YAML Manifest (.yaml / .yml)</label>
+      <input type="file" id="deploy-file" accept=".yaml,.yml" />
+
+      <button class="btn-primary btn-block" onclick="deployYaml()">
+        🚀 One-Click Deploy
+      </button>
+
+      <!-- Live pipeline steps -->
+      <div class="pipeline" id="pipeline" style="display:none">
+        <div class="pipeline-step" id="step-validate">
+          <span class="icon">📋</span>
+          <span class="step-label">Validate YAML</span>
+          <span class="step-status" id="step-validate-status">waiting</span>
+        </div>
+        <div class="pipeline-step" id="step-gitops">
+          <span class="icon">📦</span>
+          <span class="step-label">Commit to GitOps Repo</span>
+          <span class="step-status" id="step-gitops-status">waiting</span>
+        </div>
+        <div class="pipeline-step" id="step-flux">
+          <span class="icon">🔄</span>
+          <span class="step-label">FluxCD Reconciliation</span>
+          <span class="step-status" id="step-flux-status">waiting</span>
+        </div>
+        <div class="pipeline-step" id="step-pods">
+          <span class="icon">🟢</span>
+          <span class="step-label">Pods Running</span>
+          <span class="step-status" id="step-pods-status">waiting</span>
+        </div>
+      </div>
+
+      <div id="deploy-log" class="log" style="display:none"></div>
+    </div>
+
+  </div>
+
+  <!-- ─── RIGHT PANEL ─────────────────────────────── -->
+  <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('deployments', this)">Deployments</button>
+      <button class="tab"        onclick="switchTab('pods',        this)">Pods</button>
+      <button class="tab"        onclick="switchTab('status',      this)">Live Status</button>
+    </div>
+
+    <!-- Deployments tab -->
+    <div id="tab-deployments" class="card">
+      <h2>
+        📂 My Deployments
+        <button class="btn-secondary" style="margin-left:auto;font-size:.75rem;padding:.3rem .7rem"
+          onclick="loadDeployments()">Refresh</button>
+      </h2>
+      <label>User ID</label>
+      <input type="text" id="list-userid" placeholder="uuid" oninput="loadDeployments()" />
+      <div id="deployments-list"><div class="empty">Enter your User ID above</div></div>
+    </div>
+
+    <!-- Pods tab -->
+    <div id="tab-pods" class="card" style="display:none">
+      <h2>
+        🟢 Namespace Pods
+        <button class="btn-secondary" style="margin-left:auto;font-size:.75rem;padding:.3rem .7rem"
+          onclick="loadPods()">Refresh</button>
+      </h2>
+      <label>Namespace (e.g. user-alice)</label>
+      <input type="text" id="pod-namespace" placeholder="user-alice" oninput="loadPods()" />
+      <div id="pods-list"><div class="empty">Enter a namespace above</div></div>
+    </div>
+
+    <!-- Status tab -->
+    <div id="tab-status" class="card" style="display:none">
+      <h2>🔍 Deployment Status</h2>
+      <label>Deployment ID</label>
+      <input type="text" id="status-depid" placeholder="deployment-uuid" />
+      <button class="btn-secondary btn-block" onclick="checkStatus()">Check Status</button>
+      <div id="status-result" style="margin-top:1rem"></div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- Toast notification -->
+<div id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────
+// Change this to your backend API URL
+const API = window.API_URL || 'http://localhost:8000/api';
+
+// ── State ────────────────────────────────────────────────────
+let pollingInterval = null;
+let currentDeploymentId = null;
+
+// ── Utility ──────────────────────────────────────────────────
+
+function toast(message, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = message;
+  el.className = `show ${type}`;
+  setTimeout(() => el.className = '', 3000);
+}
+
+function appendLog(elId, text) {
+  const el = document.getElementById(elId);
+  el.style.display = 'block';
+  el.textContent += text + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function setStep(stepId, state, statusText) {
+  const el = document.getElementById(stepId);
+  el.className = `pipeline-step ${state}`;
+  document.getElementById(`${stepId}-status`).textContent = statusText;
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${name}`).style.display = 'block';
+  btn.classList.add('active');
+}
+
+// ── Register user ────────────────────────────────────────────
+
+async function registerUser() {
+  const username = document.getElementById('reg-username').value.trim();
+  const email    = document.getElementById('reg-email').value.trim();
+
+  if (!username || !email) {
+    toast('Please enter username and email', 'error');
+    return;
+  }
+
+  const logEl = 'reg-log';
+  document.getElementById(logEl).textContent = '';
+  appendLog(logEl, `→ Registering user: ${username}`);
+  appendLog(logEl, `→ POST ${API}/users/register`);
+
+  try {
+    const res = await fetch(`${API}/users/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      appendLog(logEl, `✗ Error: ${data.detail}`);
+      toast(data.detail, 'error');
+      return;
+    }
+
+    appendLog(logEl, `✓ User created!`);
+    appendLog(logEl, `  ID:        ${data.id}`);
+    appendLog(logEl, `  Namespace: ${data.namespace}`);
+    appendLog(logEl, `  → Kubernetes namespace created`);
+    appendLog(logEl, `  → GitOps bootstrap committed to GitHub`);
+    appendLog(logEl, `  → FluxCD will reconcile namespace within ~60s`);
+
+    // Pre-fill deploy form
+    document.getElementById('deploy-userid').value = data.id;
+    document.getElementById('list-userid').value   = data.id;
+    document.getElementById('pod-namespace').value  = data.namespace;
+
+    toast(`Namespace "${data.namespace}" created! User ID copied to Deploy form.`);
+
+  } catch (err) {
+    appendLog(logEl, `✗ Network error: ${err.message}`);
+    toast('Network error — is the backend running?', 'error');
+  }
+}
+
+// ── Deploy YAML ──────────────────────────────────────────────
+
+async function deployYaml() {
+  const userId = document.getElementById('deploy-userid').value.trim();
+  const fileEl = document.getElementById('deploy-file');
+  const file   = fileEl.files[0];
+
+  if (!userId) { toast('User ID is required', 'error'); return; }
+  if (!file)   { toast('Select a YAML file', 'error'); return; }
+
+  // Show pipeline
+  document.getElementById('pipeline').style.display = 'flex';
+  document.getElementById('deploy-log').textContent = '';
+  const logEl = 'deploy-log';
+
+  setStep('step-validate', 'active', 'validating…');
+  appendLog(logEl, `→ Reading file: ${file.name} (${(file.size/1024).toFixed(1)} KB)`);
+
+  const text = await file.text();
+
+  // Client-side basic validation
+  if (!text.trim()) {
+    setStep('step-validate', 'error', 'empty file');
+    toast('YAML file is empty', 'error');
+    return;
+  }
+
+  setStep('step-validate', 'done', '✓ valid');
+  appendLog(logEl, `✓ YAML looks valid`);
+
+  // Build FormData
+  const form = new FormData();
+  form.append('user_id',  userId);
+  form.append('filename', file.name);
+  form.append('file',     file);
+
+  setStep('step-gitops', 'active', 'committing…');
+  appendLog(logEl, `→ POST ${API}/deploy/`);
+
+  try {
+    const res  = await fetch(`${API}/deploy/`, { method: 'POST', body: form });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setStep('step-gitops', 'error', '✗ failed');
+      appendLog(logEl, `✗ ${data.detail}`);
+      toast(data.detail, 'error');
+      return;
+    }
+
+    setStep('step-gitops', 'done', '✓ committed');
+    appendLog(logEl, `✓ Committed to GitOps repo`);
+    appendLog(logEl, `  Git path:      ${data.git_path}`);
+    appendLog(logEl, `  Deployment ID: ${data.deployment_id}`);
+    appendLog(logEl, `  Namespace:     ${data.namespace}`);
+
+    currentDeploymentId = data.deployment_id;
+    document.getElementById('status-depid').value = data.deployment_id;
+
+    // Start polling for FluxCD status
+    setStep('step-flux', 'active', 'waiting for Flux…');
+    appendLog(logEl, `→ Polling FluxCD reconciliation…`);
+    startPolling(data.deployment_id, logEl);
+
+    toast('YAML committed! FluxCD is reconciling…');
+
+  } catch (err) {
+    setStep('step-gitops', 'error', '✗ network error');
+    appendLog(logEl, `✗ ${err.message}`);
+    toast('Network error', 'error');
+  }
+}
+
+// ── Poll FluxCD status ───────────────────────────────────────
+
+function startPolling(deploymentId, logEl) {
+  if (pollingInterval) clearInterval(pollingInterval);
+
+  let attempts = 0;
+  const maxAttempts = 30; // 5 minutes
+
+  pollingInterval = setInterval(async () => {
+    attempts++;
+
+    try {
+      const res  = await fetch(`${API}/status/${deploymentId}`);
+      const data = await res.json();
+
+      if (!res.ok) return;
+
+      if (data.flux_ready) {
+        setStep('step-flux', 'done', '✓ reconciled');
+        appendLog(logEl, `✓ FluxCD reconciled successfully`);
+
+        // Check pods
+        const readyPods  = data.pods.filter(p => p.ready).length;
+        const totalPods  = data.pods.length;
+
+        if (totalPods > 0) {
+          setStep('step-pods', 'done', `✓ ${readyPods}/${totalPods} ready`);
+          appendLog(logEl, `✓ ${readyPods}/${totalPods} pods running`);
+        } else {
+          setStep('step-pods', 'active', 'pods starting…');
+        }
+
+        clearInterval(pollingInterval);
+        toast('Deployment live! 🎉');
+        loadDeployments();
+        loadPods();
+        return;
+      }
+
+      if (data.db_status === 'failed') {
+        setStep('step-flux', 'error', '✗ failed');
+        appendLog(logEl, `✗ FluxCD error: ${data.flux_message}`);
+        clearInterval(pollingInterval);
+        toast('Deployment failed — check status tab', 'error');
+        return;
+      }
+
+      appendLog(logEl, `  [${attempts}] status=${data.db_status} reason=${data.flux_reason}`);
+
+    } catch (_) {}
+
+    if (attempts >= maxAttempts) {
+      clearInterval(pollingInterval);
+      appendLog(logEl, `⚠ Polling timeout — check status manually`);
+    }
+
+  }, 10000); // poll every 10 s
+}
+
+// ── Load deployments ─────────────────────────────────────────
+
+async function loadDeployments() {
+  const userId = document.getElementById('list-userid').value.trim();
+  if (!userId) return;
+
+  const container = document.getElementById('deployments-list');
+  container.innerHTML = '<div class="empty"><span class="spinner"></span>Loading…</div>';
+
+  try {
+    const res  = await fetch(`${API}/deploy/user/${userId}`);
+    const data = await res.json();
+
+    if (!res.ok || !Array.isArray(data) || data.length === 0) {
+      container.innerHTML = '<div class="empty">No deployments yet</div>';
+      return;
+    }
+
+    container.innerHTML = data.map(d => `
+      <div class="dep-row">
+        <div>
+          <div class="name">${escHtml(d.git_path.split('/').pop())}</div>
+          <div class="meta">${escHtml(d.namespace)} · ${escHtml(d.deployment_id.slice(0,8))}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span class="status-pill status-${d.status}">${d.status}</span>
+          <button class="btn-danger" style="padding:.25rem .6rem;font-size:.7rem"
+            onclick="deleteDeployment('${d.deployment_id}')">✕</button>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    container.innerHTML = `<div class="empty">Error: ${err.message}</div>`;
+  }
+}
+
+async function deleteDeployment(deploymentId) {
+  if (!confirm('Remove this deployment from GitOps?\nFluxCD will delete it from the cluster.')) return;
+
+  const res = await fetch(`${API}/deploy/${deploymentId}`, { method: 'DELETE' });
+  if (res.ok || res.status === 204) {
+    toast('Deployment removed from GitOps');
+    loadDeployments();
+  } else {
+    toast('Delete failed', 'error');
+  }
+}
+
+// ── Load pods ────────────────────────────────────────────────
+
+async function loadPods() {
+  const ns = document.getElementById('pod-namespace').value.trim();
+  if (!ns) return;
+
+  const container = document.getElementById('pods-list');
+  container.innerHTML = '<div class="empty"><span class="spinner"></span>Loading…</div>';
+
+  try {
+    const res  = await fetch(`${API}/status/namespace/${ns}`);
+    const pods = await res.json();
+
+    if (!res.ok || !Array.isArray(pods) || pods.length === 0) {
+      container.innerHTML = '<div class="empty">No pods in this namespace</div>';
+      return;
+    }
+
+    container.innerHTML = pods.map(p => `
+      <div class="pod-row">
+        <div class="pod-dot ${podDotClass(p.phase, p.ready)}"></div>
+        <div style="flex:1">
+          <div style="font-weight:600">${escHtml(p.name)}</div>
+          <div style="color:#8b949e;font-size:.75rem">${escHtml(p.node || 'unknown node')}</div>
+        </div>
+        <div style="text-align:right">
+          <div>${escHtml(p.phase)}</div>
+          <div style="color:#8b949e;font-size:.75rem">restarts: ${p.restarts}</div>
+        </div>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    container.innerHTML = `<div class="empty">Error: ${err.message}</div>`;
+  }
+}
+
+function podDotClass(phase, ready) {
+  if (phase === 'Running' && ready) return 'running';
+  if (phase === 'Pending')          return 'pending';
+  if (phase === 'Failed')           return 'failed';
+  return 'unknown';
+}
+
+// ── Check status ─────────────────────────────────────────────
+
+async function checkStatus() {
+  const depId = document.getElementById('status-depid').value.trim();
+  if (!depId) { toast('Enter a deployment ID', 'error'); return; }
+
+  const container = document.getElementById('status-result');
+  container.innerHTML = '<span class="spinner"></span> Fetching…';
+
+  try {
+    const res  = await fetch(`${API}/status/${depId}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      container.innerHTML = `<div class="empty">Error: ${escHtml(data.detail)}</div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:.75rem;font-size:.8rem">
+        <div><b>Deployment ID:</b> ${escHtml(data.deployment_id)}</div>
+        <div><b>Namespace:</b>     ${escHtml(data.namespace)}</div>
+        <div><b>Git Path:</b>      ${escHtml(data.git_path)}</div>
+        <div><b>DB Status:</b>     <span class="status-pill status-${data.db_status}">${data.db_status}</span></div>
+        <div><b>Flux Ready:</b>    ${data.flux_ready ? '✅ Yes' : '⏳ No'}</div>
+        <div><b>Flux Reason:</b>   ${escHtml(data.flux_reason)}</div>
+        <div><b>Message:</b>       ${escHtml(data.flux_message)}</div>
+        <div><b>Pods (${data.pods.length}):</b>
+          ${data.pods.map(p => `
+            <div class="pod-row">
+              <div class="pod-dot ${podDotClass(p.phase, p.ready)}"></div>
+              ${escHtml(p.name)} — ${escHtml(p.phase)}
+              ${p.restarts > 0 ? `<span style="color:#f85149">(${p.restarts} restarts)</span>` : ''}
+            </div>
+          `).join('') || '<div class="empty">No pods yet</div>'}
+        </div>
+      </div>
+    `;
+
+  } catch (err) {
+    container.innerHTML = `<div class="empty">Network error: ${err.message}</div>`;
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+
+function escHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

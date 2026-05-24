@@ -58,29 +58,94 @@ chmod +x bootstrap.sh
 6. Status tab shows live pod state
 
 
-┌─────────────────────────────────────────────────────────┐
-│                    ONCE (bootstrap.sh)                   │
-│                                                         │
-│  Terraform ──► EKS Cluster (shared by all users)        │
-│                 ├── Node Group (EC2 t3.medium x3)       │
-│                 ├── FluxCD controllers                   │
-│                 ├── ingress-nginx (NLB)                  │
-│                 └── Prometheus + Grafana                 │
-└─────────────────────────────────────────────────────────┘
+# One-Click Ops – Architecture
 
-┌─────────────────────────────────────────────────────────┐
-│              PER USER (frontend → API)                   │
-│                                                         │
-│  Register ──► namespace "user-alice" created in EKS     │
-│               ├── ResourceQuota (2 CPU, 2Gi RAM)        │
-│               ├── LimitRange (default limits)           │
-│               └── NetworkPolicy (namespace isolation)   │
-│                                                         │
-│  Deploy ──► YAML committed to GitHub                    │
-│              clusters/production/users/user-alice/      │
-│                                                         │
-│  FluxCD ──► detects commit ──► applies to EKS           │
-│                                                         │
-│  Status ──► polls FluxCD + Kubernetes API               │
-│              ──► shows pod status in frontend           │
-└─────────────────────────────────────────────────────────┘
+## Platform Bootstrap (One-Time Setup)
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                    ONCE (bootstrap.sh)                      │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  Terraform provisions shared infrastructure:                 │
+│                                                              │
+│   ┌──────────────────────────────────────────────────────┐   │
+│   │                 Amazon EKS Cluster                  │   │
+│   ├──────────────────────────────────────────────────────┤   │
+│   │ • Shared Kubernetes Cluster                         │   │
+│   │ • Managed Node Group (EC2 t3.medium × 3)            │   │
+│   │ • FluxCD Controllers                                │   │
+│   │ • ingress-nginx with AWS NLB                        │   │
+│   │ • Prometheus + Grafana Monitoring Stack             │   │
+│   └──────────────────────────────────────────────────────┘   │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Per-User Deployment Flow
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                 PER USER (Frontend → API)                   │
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│  1. User Registration                                        │
+│                                                              │
+│     Namespace Created in EKS:                                │
+│       user-alice                                              │
+│                                                              │
+│     Security & Resource Controls:                            │
+│       • ResourceQuota (2 CPU, 2Gi RAM)                       │
+│       • LimitRange (default requests/limits)                 │
+│       • NetworkPolicy (namespace isolation)                  │
+│                                                              │
+│  2. Application Deployment                                   │
+│                                                              │
+│     Deployment YAML committed to GitHub:                     │
+│                                                              │
+│     clusters/production/users/user-alice/                    │
+│                                                              │
+│  3. GitOps Synchronization                                   │
+│                                                              │
+│     FluxCD watches repository changes                        │
+│            │                                                 │
+│            ▼                                                 │
+│     Automatically applies manifests to EKS                   │
+│                                                              │
+│  4. Deployment Status Tracking                               │
+│                                                              │
+│     Backend polls:                                           │
+│       • FluxCD API                                           │
+│       • Kubernetes API                                       │
+│                                                              │
+│     Frontend displays:                                       │
+│       • Pod Status                                           │
+│       • Deployment Health                                    │
+│       • Running Services                                     │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+# Architecture Diagram
+
+
+
+```markdown
+![One Click Ops Architecture](./docs/architecture.png)
+```
+
+If image is in root folder:
+
+```markdown
+![Architecture](./architecture.png)
+```
+
+If using GitHub URL directly:
+
+```markdown
+![Architecture](https://raw.githubusercontent.com/<username>/<repo>/main/docs/architecture.png)
+```

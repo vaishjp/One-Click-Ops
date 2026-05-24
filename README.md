@@ -135,13 +135,13 @@ chmod +x bootstrap.sh
 
 
 ```markdown
-![One Click Ops Architecture](./docs/architecture.png)
+![One Click Ops Architecture](/deployment-platform/images/one_click_provisioner_pipeline.svg)
 ```
 
-If image is in root folder:
+#front-end
 
 ```markdown
-![Architecture](./architecture.png)
+![Architecture](/deployment-platform/images/Screenshot from 2026-05-24 17-00-35.png.png)
 ```
 
 If using GitHub URL directly:

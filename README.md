@@ -138,8 +138,4 @@ chmod +x bootstrap.sh
 
 ![Architecture](./deployment-platform/images/Screenshot%20from%202026-05-24%2017-00-35.png)
 
-If using GitHub URL directly:
 
-```markdown
-![Architecture](https://raw.githubusercontent.com/<username>/<repo>/main/docs/architecture.png)
-```

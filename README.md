@@ -132,17 +132,11 @@ chmod +x bootstrap.sh
 
 # Architecture Diagram
 
-
-
-```markdown
 ![One Click Ops Architecture](./deployment-platform/images/one_click_provisioner_pipeline.svg)
-```
 
-#front-end
+## Front-end
 
-```markdown
-![Architecture](./deployment-platform/images/Screenshot from 2026-05-24 17-00-35.png.png)
-```
+![Architecture](./deployment-platform/images/Screenshot%20from%202026-05-24%2017-00-35.png)
 
 If using GitHub URL directly:
 

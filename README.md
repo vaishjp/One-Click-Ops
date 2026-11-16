@@ -33,6 +33,8 @@ Backend API (FastAPI)
 | All users share the cluster | Cost-efficient; isolated by namespaces |
 | Namespace per user | RBAC, NetworkPolicy, ResourceQuota isolation |
 | FluxCD GitOps | No `kubectl apply` in CI — git is the source of truth |
+|handles multi-level auto-scaling pod and node level|
+|monitors cost etc|
 | No Docker builds | Users upload pre-written YAML pointing at public/pre-built images |
 | FastAPI backend | Creates namespaces + commits YAML; stateless except SQLite |
 

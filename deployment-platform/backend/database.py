@@ -16,8 +16,8 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
 
-    id           = sa.Column(sa.String, primary_key=True)   # slugified username
-    username     = sa.Column(sa.String, unique=True, nullable=False)
+    id           = sa.Column(sa.String, primary_key=True)   # slugified username1
+    username1     = sa.Column(sa.String, unique=True, nullable=False)
     email        = sa.Column(sa.String, unique=True, nullable=False)
     namespace    = sa.Column(sa.String, unique=True, nullable=False)
     created_at   = sa.Column(sa.DateTime, server_default=sa.func.now())
